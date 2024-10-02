@@ -1,0 +1,85 @@
+name: Terraform CI/CD
+
+on:
+  workflow_dispatch:
+
+#on:
+#  push:
+#    branches:
+#      - main
+
+env:
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  TF_VAR_access_key: ${{ secrets.TF_VAR_access_key }}
+  TF_VAR_secret_key: ${{ secrets.TF_VAR_secret_key }}
+  TF_VAR_account_id: ${{ secrets.TF_VAR_account_id }}
+  TF_VAR_cloud_id: ${{ secrets.TF_VAR_cloud_id }}
+  TF_VAR_folder_id: ${{ secrets.TF_VAR_folder_id }}
+  TF_VAR_default_zone: ${{ secrets.TF_VAR_default_zone }}
+  ANSIBLE_SSH_PRIVATE_KEY: ${{ secrets.ANSIBLE_SSH_PRIVATE_KEY }}
+  ANSIBLE_SSH_PUBLIC_KEY: ${{ secrets.ANSIBLE_SSH_PUBLIC_KEY }}
+
+jobs:
+  terraform:
+    runs-on: ubuntu-22.04
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+
+    - name: Create service account key file
+      run: |
+        mkdir -p ~/.ssh
+        echo "${{ secrets.SA_IAM_KEY }}" | base64 --decode > ~/.ssh/key.json
+    - name: Set up SSH
+      run: |
+        mkdir -p ~/.ssh
+        echo "${{ env.ANSIBLE_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+        echo "${{ env.ANSIBLE_SSH_PUBLIC_KEY }}" > ~/.ssh/id_rsa.pub
+        chmod 600 ~/.ssh/id_rsa.pub
+        
+    - name: Terraform Init
+      working-directory: terraform
+      run: terraform init
+
+     
+      
+    - name: Terraform Validate
+      working-directory: terraform
+      run: terraform validate
+     
+    - name: Terraform Plan
+      working-directory: terraform
+      run: terraform plan
+      
+    - name: Terraform Apply
+      working-directory: terraform
+      run: terraform apply -auto-approve
+
+    - name: Get terraform output in yml
+      working-directory: terraform
+      run: |
+        terraform output -json > ../k8s/tf_outputs.json
+        jq -r 'to_entries | map(.key + ": " + .value.value) | .[]' ../k8s/tf_outputs.json > ../k8s/tf_outputs.yml
+    - name: Install GitHub CLI
+      run: |
+        sudo apt-get install gh
+    - name: Login to GitHub
+      env:
+        PAT: ${{ secrets.GIT_ACCESS_TOKEN }}
+      run: |
+        echo "$PAT" | gh auth login --with-token
+    - name: Set secret in another repository
+      run: |
+        my_registry_id=$(grep 'my_registry_id:'  k8s/tf_outputs.yml | cut -d ' ' -f 2)
+        echo $my_registry_id
+        gh secret set MY_REGISTRY_ID --body $my_registry_id --repo kshatyy/my-diplom-app
+        K8S_address=$(grep 'K8S_address:'  k8s/tf_outputs.yml | cut -d ' ' -f 2)
+        sed -i "s/127.0.0.1:6443/$K8S_address/g" k8s/kube-config
+        kube_config=$(base64 < k8s/kube-config | tr -d '\n' | sed -e 's/^[ \t]*//' -e 's/[ \t]*$//')
+        gh secret set KUBE_CONFIG --body $kube_config --repo kshatyy/my-diplom-app
