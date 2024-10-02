@@ -9,8 +9,8 @@ yc resource-manager folder add-access-binding --id b1g0jjnic75phgkajfgn --role c
 yc iam access-key create --service-account-id $ID_SA --format json > ~/.ssh/sa-key.json
 yc iam key create --service-account-id $ID_SA --format json --output ~/.ssh/key.json
 
-ACCESS_KEY_ID=$(grep 'key_id' ~/.ssh/sa-name = "nat-instance" | awk '{print $2}' | tr -d \")
-SECRET_ACCESS_KEY=$(grep 'secret' ~/.ssh/sa-name = "nat-instance" | awk '{print $2}' | tr -d \")
+ACCESS_KEY_ID=$(grep 'key_id' ~/.ssh/sa-key.json | awk '{print $2}' | tr -d \")
+SECRET_ACCESS_KEY=$(grep 'secret' ~/.ssh/sa-key.json | awk '{print $2}' | tr -d \")
 
 export AWS_ACCESS_KEY_ID=$ACCESS_KEY_ID
 export AWS_SECRET_ACCESS_KEY=$SECRET_ACCESS_KEY
