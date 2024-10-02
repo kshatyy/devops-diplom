@@ -1,0 +1,19 @@
+---
+- name: Prepare to install K8S
+  hosts: all
+  become: true
+  gather_facts: false
+
+  pre_tasks:
+    - name: Wait for connection
+      ansible.builtin.wait_for_connection:
+        timeout: 300
+
+  tasks:
+    - name: Packages-update
+      ansible.builtin.apt:
+        name:
+          - git
+          - python3-pip
+        state: present
+        update_cache: true

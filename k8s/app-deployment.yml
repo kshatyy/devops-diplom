@@ -1,0 +1,26 @@
+  apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    name: diplom-devops-app
+    labels:
+      app: app
+  spec:
+    replicas: 3
+    strategy:
+      type: RollingUpdate
+      rollingUpdate:
+        maxSurge: 25%
+        maxUnavailable: 25%
+    selector:
+      matchLabels:
+        app: app
+    template:
+      metadata:
+        labels:
+          app: app
+      spec:
+        containers:
+        - name: diplom-devops-app
+          image: cr.yandex/<registry_id>/nginx:latest
+          ports:
+          - containerPort: 80

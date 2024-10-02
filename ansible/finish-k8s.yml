@@ -1,0 +1,56 @@
+- name: Cofigure K8S
+  hosts: kube_control_plane
+  become: true
+  gather_facts: false
+  tasks:
+
+    - name: Get user home directory
+      getent:
+        database: passwd
+        key: "{{ ansible_user }}"
+      register: user_info
+
+    - name: Extract home directory from user_info
+      set_fact:
+        home_dir: "{{ user_info.ansible_facts.getent_passwd.ubuntu[4] }}"
+
+    - name: Make directory for depoy
+      ansible.builtin.file:
+        path: "{{ home_dir }}/.kube"
+        state: directory
+        mode: '0755'
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+
+    - name: Copy config K8S
+      ansible.builtin.copy:
+        remote_src: true
+        src: "/etc/kubernetes/admin.conf"
+        dest: "{{ home_dir }}/.kube/config"
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+
+    - name: Make directory for K8S
+      ansible.builtin.file:
+        path: "{{ home_dir }}/k8s"
+        state: directory
+        mode: '0755'
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+
+    - name: Copy deployment app
+      ansible.builtin.copy:
+        src: "{{ item }}"
+        dest: "{{ home_dir }}/k8s/{{ item }}"
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+      with_items:
+        - "../k8s/app-deployment.yml"
+        - "../k8s/app-networkpolicy.yml"
+        - "../k8s/app-service.yml"
+
+    - name: Copy file from remote machine to local machine
+      ansible.builtin.fetch:
+        src: "{{ home_dir }}/.kube/config"
+        dest: ../k8s/kube-config
+        flat: yes

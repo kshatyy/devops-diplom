@@ -1,0 +1,20 @@
+---
+- name: Depoy app
+  hosts: kube_control_plane
+  gather_facts: true
+  become: false
+  vars_files:
+    - "registry_id.txt"
+
+  tasks:
+  - name: Change registry
+    ansible.builtin.command:
+      cmd: 'sed -i -e "s|image:.*|image: cr.yandex/{{ vars.my_registry_id }}/nginx:latest|" ~/k8s/app-deployment.yml'
+
+  - name: Deployment to k8s
+    ansible.builtin.command:
+      cmd: "kubectl apply -f {{ item }}"
+    with_items:
+      - "~/k8s/app-deployment.yml"
+      - "~/k8s/app-networkpolicy.yml"
+      - "~/k8s/app-service.yml"

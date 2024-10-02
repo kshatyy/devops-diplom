@@ -1,0 +1,11 @@
+---
+- name: Depoy app
+  hosts: kube_control_plane
+  gather_facts: false
+  become: false
+  tasks:
+    - name: Copy file from remote machine to local machine
+      ansible.builtin.fetch:
+        src: "~/.kube/config"
+        dest: ../k8s/kube-config
+        flat: true
