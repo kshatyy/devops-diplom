@@ -78,8 +78,8 @@ jobs:
       run: |
         my_registry_id=$(grep 'my_registry_id:'  k8s/tf_outputs.yml | cut -d ' ' -f 2)
         echo $my_registry_id
-        gh secret set MY_REGISTRY_ID --body $my_registry_id --repo kshatyy/my-diplom-app
+        gh secret set MY_REGISTRY_ID --body $my_registry_id --repo kshatyy/diplom-devops-app
         K8S_address=$(grep 'K8S_address:'  k8s/tf_outputs.yml | cut -d ' ' -f 2)
         sed -i "s/127.0.0.1:6443/$K8S_address/g" k8s/kube-config
         kube_config=$(base64 < k8s/kube-config | tr -d '\n' | sed -e 's/^[ \t]*//' -e 's/[ \t]*$//')
-        gh secret set KUBE_CONFIG --body $kube_config --repo kshatyy/my-diplom-app
+        gh secret set KUBE_CONFIG --body $kube_config --repo kshatyy/diplom-devops-app
