@@ -1072,7 +1072,7 @@ output "App_address" {
 
 9. Результаты развертывания:
 
-<img src="img/19.png">
+<img src="img/19a.png">
 
 10. Перейдем по указанному адресу, введем стандартные учетные данные admin/admin123 и откроем дашборд ```Kubernetes / Compute Resources / Node (Pods)```:
 
